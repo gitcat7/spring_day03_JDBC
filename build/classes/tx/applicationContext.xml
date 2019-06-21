@@ -34,6 +34,20 @@
 		<property name="transactionManager" ref="transactionManager"></property>
 	</bean>
 	
+	<!-- 配置事务通知 -->
+	<tx:advice id="myAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="transfer" isolation="REPEATABLE_READ" propagation="REQUIRED" read-only="false"/>
+		</tx:attributes>
+	</tx:advice>
+	
+	<!-- 配置织入 -->
+	<aop:config>
+		<aop:pointcut expression="execution(* tx.accountService.AccountServiceImpl.*(..))" id="txPc"/>
+		<!-- 配置切面 -->
+		<aop:advisor advice-ref="myAdvice" pointcut-ref="txPc"/>
+	</aop:config>
+	
 	<!-- 创建Dao对象 -->
 	<bean name="accountDao" class="tx.accountDao.AccountDaoImpl">
 		<property name="dataSource" ref="dataSource"></property>

@@ -13,18 +13,10 @@ public class AccountServiceImpl implements AccountService {
 	
 	@Override
 	public void transfer(Integer from, Integer to, Double money) {
-		
-		tt.execute(new TransactionCallbackWithoutResult() {
-			
-			@Override
-			protected void doInTransactionWithoutResult(TransactionStatus arg0) {
 				//减钱
 				ad.delMoney(from, money);
 				//加钱
 				ad.addMoney(to, money);
-			}
-		});
-		
 	}
 
 	public void setAd(AccountDao ad) {

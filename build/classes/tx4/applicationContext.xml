@@ -14,9 +14,8 @@
 							http://www.springframework.org/schema/tx/spring-tx-4.3.xsd ">
 
 
-	<context:property-placeholder location="classpath:tx/conn.properties"/>
-
-	<!-- 创建连接池 -->
+	<context:property-placeholder location="classpath:tx4/conn.properties"/>
+	<!-- 1.创建连接池 -->
 	<bean name="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
 		<property name="driverClass" value="${jdbc.driverClass}"></property>
 		<property name="jdbcUrl" value="${jdbc.Url}"></property>
@@ -24,38 +23,48 @@
 		<property name="password" value="${jdbc.password}"></property>
 	</bean>
 	
-	<!-- 事务核心管理器,封装了所有事务操作,依赖于连接池 -->
+	<!-- 2.配置dao层 -->
+	<bean name="accountDao" class="tx4.accountDao.AccountDaoImpl">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	
+	<!-- 3.配置service层 -->
+	<bean name="accountService" class="tx4.accountService.AccountServiceImpl">
+		<property name="ad" ref="accountDao"></property>
+	</bean>
+
+	<!-- 4.配置事务核心管理器 -->
 	<bean name="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
 		<property name="dataSource" ref="dataSource"></property>
 	</bean>
 	
-	<!--事务模板对象  -->
+	<!-- 5.事务模板对象 -->
 	<bean name="transactionTemplate" class="org.springframework.transaction.support.TransactionTemplate">
 		<property name="transactionManager" ref="transactionManager"></property>
 	</bean>
 	
-	<!-- 配置事务通知 -->
+	<!-- 6.配置事务通知 -->
 	<tx:advice id="myAdvice" transaction-manager="transactionManager">
 		<tx:attributes>
 			<tx:method name="transfer" isolation="REPEATABLE_READ" propagation="REQUIRED" read-only="false"/>
 		</tx:attributes>
 	</tx:advice>
 	
-	<!-- 配置织入 -->
+	<!-- 7.配置织入 -->
 	<aop:config>
-		<aop:pointcut expression="execution(* tx.accountService.AccountServiceImpl.*(..))" id="txPc"/>
-		<!-- 配置切面 -->
+		<aop:pointcut expression="execution(* tx4.accountService.*ServiceImpl.*(..))" id="txPc"/>
 		<aop:advisor advice-ref="myAdvice" pointcut-ref="txPc"/>
 	</aop:config>
 	
-	<!-- 创建Dao对象 -->
-	<bean name="accountDao" class="tx.accountDao.AccountDaoImpl">
-		<property name="dataSource" ref="dataSource"></property>
-	</bean>
 	
-	<!-- Service -->
-	<bean name="accountService" class="tx.accountService.AccountServiceImpl">
-		<property name="ad" ref="accountDao"></property>
-		<property name="tt" ref="transactionTemplate"></property>
-	</bean>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 </beans>

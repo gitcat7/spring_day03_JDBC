@@ -14,9 +14,43 @@
 							http://www.springframework.org/schema/tx/spring-tx-4.3.xsd ">
 
 
-	<context:property-placeholder location="classpath:tx/conn.properties"/>
+	<context:property-placeholder location="classpath:tx3/conn.properties"/>
+	
+	<!-- 事务核心管理器,封装了所有事务操作,依赖于连接池 -->
+	<bean name="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
 
-	<!-- 创建连接池 -->
+	<!-- 事务模板对象 -->
+	<bean name="transactionTemplate" class="org.springframework.transaction.support.TransactionTemplate">
+		<property name="transactionManager" ref="transactionManager"></property>
+	</bean>
+	
+	<!-- 配置事务通知 -->
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="save*" isolation="REPEATABLE_READ" propagation="REQUIRED" read-only="false"/>
+			<tx:method name="persist*" isolation="REPEATABLE_READ" propagation="REQUIRED" read-only="false"/>
+			<tx:method name="update*" isolation="REPEATABLE_READ" propagation="REQUIRED" read-only="false"/>
+			<tx:method name="modify*" isolation="REPEATABLE_READ" propagation="REQUIRED" read-only="false"/>
+			<tx:method name="delete*" isolation="REPEATABLE_READ" propagation="REQUIRED" read-only="false"/>
+			<tx:method name="remove*" isolation="REPEATABLE_READ" propagation="REQUIRED" read-only="false"/>
+			<tx:method name="get*" isolation="REPEATABLE_READ" propagation="REQUIRED" read-only="true"/>
+			<tx:method name="find*" isolation="REPEATABLE_READ" propagation="REQUIRED" read-only="true"/>
+			<tx:method name="transfer" isolation="REPEATABLE_READ" propagation="REQUIRED" read-only="false"/>
+		</tx:attributes>
+	</tx:advice>
+	
+	<!-- 配置织入 -->
+	<aop:config>
+		<aop:pointcut expression="execution(* tx3.accountService.*ServiceImpl.*(..))" id="txPc"/>
+		<!-- 配置切面 -->
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="txPc"/>
+	</aop:config>
+	
+	
+		
+	<!-- 1.创建连接池 -->
 	<bean name="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
 		<property name="driverClass" value="${jdbc.driverClass}"></property>
 		<property name="jdbcUrl" value="${jdbc.Url}"></property>
@@ -24,38 +58,17 @@
 		<property name="password" value="${jdbc.password}"></property>
 	</bean>
 	
-	<!-- 事务核心管理器,封装了所有事务操作,依赖于连接池 -->
-	<bean name="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+	<!-- 2.配置dao层 -->
+	<bean name="accountDao" class="tx3.accountDao.AccountDaoImpl">
 		<property name="dataSource" ref="dataSource"></property>
 	</bean>
 	
-	<!--事务模板对象  -->
-	<bean name="transactionTemplate" class="org.springframework.transaction.support.TransactionTemplate">
-		<property name="transactionManager" ref="transactionManager"></property>
-	</bean>
-	
-	<!-- 配置事务通知 -->
-	<tx:advice id="myAdvice" transaction-manager="transactionManager">
-		<tx:attributes>
-			<tx:method name="transfer" isolation="REPEATABLE_READ" propagation="REQUIRED" read-only="false"/>
-		</tx:attributes>
-	</tx:advice>
-	
-	<!-- 配置织入 -->
-	<aop:config>
-		<aop:pointcut expression="execution(* tx.accountService.AccountServiceImpl.*(..))" id="txPc"/>
-		<!-- 配置切面 -->
-		<aop:advisor advice-ref="myAdvice" pointcut-ref="txPc"/>
-	</aop:config>
-	
-	<!-- 创建Dao对象 -->
-	<bean name="accountDao" class="tx.accountDao.AccountDaoImpl">
-		<property name="dataSource" ref="dataSource"></property>
-	</bean>
-	
-	<!-- Service -->
-	<bean name="accountService" class="tx.accountService.AccountServiceImpl">
+	<!-- 3.配置service层 -->
+	<bean name="accountService" class="tx3.accountService.AccountServiceImpl">
 		<property name="ad" ref="accountDao"></property>
-		<property name="tt" ref="transactionTemplate"></property>
 	</bean>
+	
+	
+	
+	
 </beans>
